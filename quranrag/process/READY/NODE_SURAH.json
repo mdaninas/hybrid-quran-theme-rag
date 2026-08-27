@@ -1,0 +1,686 @@
+[
+  {
+    "id": "1",
+    "name": "الفاتحة",
+    "nama_latin": "Al-Fatihah",
+    "total_ayat": "7"
+  },
+  {
+    "id": "2",
+    "name": "البقرة",
+    "nama_latin": "Al-Baqarah",
+    "total_ayat": "286"
+  },
+  {
+    "id": "3",
+    "name": "آل عمران",
+    "nama_latin": "Ali 'Imran",
+    "total_ayat": "200"
+  },
+  {
+    "id": "4",
+    "name": "النساء",
+    "nama_latin": "An-Nisa",
+    "total_ayat": "176"
+  },
+  {
+    "id": "5",
+    "name": "المائدة",
+    "nama_latin": "Al-Ma'idah",
+    "total_ayat": "120"
+  },
+  {
+    "id": "6",
+    "name": "الأنعام",
+    "nama_latin": "Al-An'am",
+    "total_ayat": "165"
+  },
+  {
+    "id": "7",
+    "name": "الأعراف",
+    "nama_latin": "Al-A'raf",
+    "total_ayat": "206"
+  },
+  {
+    "id": "8",
+    "name": "الأنفال",
+    "nama_latin": "Al-Anfal",
+    "total_ayat": "75"
+  },
+  {
+    "id": "9",
+    "name": "التوبة",
+    "nama_latin": "At-Tawbah",
+    "total_ayat": "129"
+  },
+  {
+    "id": "10",
+    "name": "يونس",
+    "nama_latin": "Yunus",
+    "total_ayat": "109"
+  },
+  {
+    "id": "11",
+    "name": "هود",
+    "nama_latin": "Hud",
+    "total_ayat": "123"
+  },
+  {
+    "id": "12",
+    "name": "يوسف",
+    "nama_latin": "Yusuf",
+    "total_ayat": "111"
+  },
+  {
+    "id": "13",
+    "name": "الرعد",
+    "nama_latin": "Ar-Ra'd",
+    "total_ayat": "43"
+  },
+  {
+    "id": "14",
+    "name": "ابراهيم",
+    "nama_latin": "Ibrahim",
+    "total_ayat": "52"
+  },
+  {
+    "id": "15",
+    "name": "الحجر",
+    "nama_latin": "Al-Hijr",
+    "total_ayat": "99"
+  },
+  {
+    "id": "16",
+    "name": "النحل",
+    "nama_latin": "An-Nahl",
+    "total_ayat": "128"
+  },
+  {
+    "id": "17",
+    "name": "الإسراء",
+    "nama_latin": "Al-Isra",
+    "total_ayat": "111"
+  },
+  {
+    "id": "18",
+    "name": "الكهف",
+    "nama_latin": "Al-Kahf",
+    "total_ayat": "110"
+  },
+  {
+    "id": "19",
+    "name": "مريم",
+    "nama_latin": "Maryam",
+    "total_ayat": "98"
+  },
+  {
+    "id": "20",
+    "name": "طه",
+    "nama_latin": "Taha",
+    "total_ayat": "135"
+  },
+  {
+    "id": "21",
+    "name": "الأنبياء",
+    "nama_latin": "Al-Anbya",
+    "total_ayat": "112"
+  },
+  {
+    "id": "22",
+    "name": "الحج",
+    "nama_latin": "Al-Hajj",
+    "total_ayat": "78"
+  },
+  {
+    "id": "23",
+    "name": "المؤمنون",
+    "nama_latin": "Al-Mu'minun",
+    "total_ayat": "118"
+  },
+  {
+    "id": "24",
+    "name": "النور",
+    "nama_latin": "An-Nur",
+    "total_ayat": "64"
+  },
+  {
+    "id": "25",
+    "name": "الفرقان",
+    "nama_latin": "Al-Furqan",
+    "total_ayat": "77"
+  },
+  {
+    "id": "26",
+    "name": "الشعراء",
+    "nama_latin": "Ash-Shu'ara",
+    "total_ayat": "227"
+  },
+  {
+    "id": "27",
+    "name": "النمل",
+    "nama_latin": "An-Naml",
+    "total_ayat": "93"
+  },
+  {
+    "id": "28",
+    "name": "القصص",
+    "nama_latin": "Al-Qasas",
+    "total_ayat": "88"
+  },
+  {
+    "id": "29",
+    "name": "العنكبوت",
+    "nama_latin": "Al-'Ankabut",
+    "total_ayat": "69"
+  },
+  {
+    "id": "30",
+    "name": "الروم",
+    "nama_latin": "Ar-Rum",
+    "total_ayat": "60"
+  },
+  {
+    "id": "31",
+    "name": "لقمان",
+    "nama_latin": "Luqman",
+    "total_ayat": "34"
+  },
+  {
+    "id": "32",
+    "name": "السجدة",
+    "nama_latin": "As-Sajdah",
+    "total_ayat": "30"
+  },
+  {
+    "id": "33",
+    "name": "الأحزاب",
+    "nama_latin": "Al-Ahzab",
+    "total_ayat": "73"
+  },
+  {
+    "id": "34",
+    "name": "سبإ",
+    "nama_latin": "Saba",
+    "total_ayat": "54"
+  },
+  {
+    "id": "35",
+    "name": "فاطر",
+    "nama_latin": "Fatir",
+    "total_ayat": "45"
+  },
+  {
+    "id": "36",
+    "name": "يس",
+    "nama_latin": "Ya-Sin",
+    "total_ayat": "83"
+  },
+  {
+    "id": "37",
+    "name": "الصافات",
+    "nama_latin": "As-Saffat",
+    "total_ayat": "182"
+  },
+  {
+    "id": "38",
+    "name": "ص",
+    "nama_latin": "Sad",
+    "total_ayat": "88"
+  },
+  {
+    "id": "39",
+    "name": "الزمر",
+    "nama_latin": "Az-Zumar",
+    "total_ayat": "75"
+  },
+  {
+    "id": "40",
+    "name": "غافر",
+    "nama_latin": "Ghafir",
+    "total_ayat": "85"
+  },
+  {
+    "id": "41",
+    "name": "فصلت",
+    "nama_latin": "Fussilat",
+    "total_ayat": "54"
+  },
+  {
+    "id": "42",
+    "name": "الشورى",
+    "nama_latin": "Ash-Shuraa",
+    "total_ayat": "53"
+  },
+  {
+    "id": "43",
+    "name": "الزخرف",
+    "nama_latin": "Az-Zukhruf",
+    "total_ayat": "89"
+  },
+  {
+    "id": "44",
+    "name": "الدخان",
+    "nama_latin": "Ad-Dukhan",
+    "total_ayat": "59"
+  },
+  {
+    "id": "45",
+    "name": "الجاثية",
+    "nama_latin": "Al-Jathiyah",
+    "total_ayat": "37"
+  },
+  {
+    "id": "46",
+    "name": "الأحقاف",
+    "nama_latin": "Al-Ahqaf",
+    "total_ayat": "35"
+  },
+  {
+    "id": "47",
+    "name": "محمد",
+    "nama_latin": "Muhammad",
+    "total_ayat": "38"
+  },
+  {
+    "id": "48",
+    "name": "الفتح",
+    "nama_latin": "Al-Fath",
+    "total_ayat": "29"
+  },
+  {
+    "id": "49",
+    "name": "الحجرات",
+    "nama_latin": "Al-Hujurat",
+    "total_ayat": "18"
+  },
+  {
+    "id": "50",
+    "name": "ق",
+    "nama_latin": "Qaf",
+    "total_ayat": "45"
+  },
+  {
+    "id": "51",
+    "name": "الذاريات",
+    "nama_latin": "Adh-Dhariyat",
+    "total_ayat": "60"
+  },
+  {
+    "id": "52",
+    "name": "الطور",
+    "nama_latin": "At-Tur",
+    "total_ayat": "49"
+  },
+  {
+    "id": "53",
+    "name": "النجم",
+    "nama_latin": "An-Najm",
+    "total_ayat": "62"
+  },
+  {
+    "id": "54",
+    "name": "القمر",
+    "nama_latin": "Al-Qamar",
+    "total_ayat": "55"
+  },
+  {
+    "id": "55",
+    "name": "الرحمن",
+    "nama_latin": "Ar-Rahman",
+    "total_ayat": "78"
+  },
+  {
+    "id": "56",
+    "name": "الواقعة",
+    "nama_latin": "Al-Waqi'ah",
+    "total_ayat": "96"
+  },
+  {
+    "id": "57",
+    "name": "الحديد",
+    "nama_latin": "Al-Hadid",
+    "total_ayat": "29"
+  },
+  {
+    "id": "58",
+    "name": "المجادلة",
+    "nama_latin": "Al-Mujadila",
+    "total_ayat": "22"
+  },
+  {
+    "id": "59",
+    "name": "الحشر",
+    "nama_latin": "Al-Hashr",
+    "total_ayat": "24"
+  },
+  {
+    "id": "60",
+    "name": "الممتحنة",
+    "nama_latin": "Al-Mumtahanah",
+    "total_ayat": "13"
+  },
+  {
+    "id": "61",
+    "name": "الصف",
+    "nama_latin": "As-Saf",
+    "total_ayat": "14"
+  },
+  {
+    "id": "62",
+    "name": "الجمعة",
+    "nama_latin": "Al-Jumu'ah",
+    "total_ayat": "11"
+  },
+  {
+    "id": "63",
+    "name": "المنافقون",
+    "nama_latin": "Al-Munafiqun",
+    "total_ayat": "11"
+  },
+  {
+    "id": "64",
+    "name": "التغابن",
+    "nama_latin": "At-Taghabun",
+    "total_ayat": "18"
+  },
+  {
+    "id": "65",
+    "name": "الطلاق",
+    "nama_latin": "At-Talaq",
+    "total_ayat": "12"
+  },
+  {
+    "id": "66",
+    "name": "التحريم",
+    "nama_latin": "At-Tahrim",
+    "total_ayat": "12"
+  },
+  {
+    "id": "67",
+    "name": "الملك",
+    "nama_latin": "Al-Mulk",
+    "total_ayat": "30"
+  },
+  {
+    "id": "68",
+    "name": "القلم",
+    "nama_latin": "Al-Qalam",
+    "total_ayat": "52"
+  },
+  {
+    "id": "69",
+    "name": "الحاقة",
+    "nama_latin": "Al-Haqqah",
+    "total_ayat": "52"
+  },
+  {
+    "id": "70",
+    "name": "المعارج",
+    "nama_latin": "Al-Ma'arij",
+    "total_ayat": "44"
+  },
+  {
+    "id": "71",
+    "name": "نوح",
+    "nama_latin": "Nuh",
+    "total_ayat": "28"
+  },
+  {
+    "id": "72",
+    "name": "الجن",
+    "nama_latin": "Al-Jinn",
+    "total_ayat": "28"
+  },
+  {
+    "id": "73",
+    "name": "المزمل",
+    "nama_latin": "Al-Muzzammil",
+    "total_ayat": "20"
+  },
+  {
+    "id": "74",
+    "name": "المدثر",
+    "nama_latin": "Al-Muddaththir",
+    "total_ayat": "56"
+  },
+  {
+    "id": "75",
+    "name": "القيامة",
+    "nama_latin": "Al-Qiyamah",
+    "total_ayat": "40"
+  },
+  {
+    "id": "76",
+    "name": "الانسان",
+    "nama_latin": "Al-Insan",
+    "total_ayat": "31"
+  },
+  {
+    "id": "77",
+    "name": "المرسلات",
+    "nama_latin": "Al-Mursalat",
+    "total_ayat": "50"
+  },
+  {
+    "id": "78",
+    "name": "النبإ",
+    "nama_latin": "An-Naba",
+    "total_ayat": "40"
+  },
+  {
+    "id": "79",
+    "name": "النازعات",
+    "nama_latin": "An-Nazi'at",
+    "total_ayat": "46"
+  },
+  {
+    "id": "80",
+    "name": "عبس",
+    "nama_latin": "'Abasa",
+    "total_ayat": "42"
+  },
+  {
+    "id": "81",
+    "name": "التكوير",
+    "nama_latin": "At-Takwir",
+    "total_ayat": "29"
+  },
+  {
+    "id": "82",
+    "name": "الإنفطار",
+    "nama_latin": "Al-Infitar",
+    "total_ayat": "19"
+  },
+  {
+    "id": "83",
+    "name": "المطففين",
+    "nama_latin": "Al-Mutaffifin",
+    "total_ayat": "36"
+  },
+  {
+    "id": "84",
+    "name": "الإنشقاق",
+    "nama_latin": "Al-Inshiqaq",
+    "total_ayat": "25"
+  },
+  {
+    "id": "85",
+    "name": "البروج",
+    "nama_latin": "Al-Buruj",
+    "total_ayat": "22"
+  },
+  {
+    "id": "86",
+    "name": "الطارق",
+    "nama_latin": "At-Tariq",
+    "total_ayat": "17"
+  },
+  {
+    "id": "87",
+    "name": "الأعلى",
+    "nama_latin": "Al-A'la",
+    "total_ayat": "19"
+  },
+  {
+    "id": "88",
+    "name": "الغاشية",
+    "nama_latin": "Al-Ghashiyah",
+    "total_ayat": "26"
+  },
+  {
+    "id": "89",
+    "name": "الفجر",
+    "nama_latin": "Al-Fajr",
+    "total_ayat": "30"
+  },
+  {
+    "id": "90",
+    "name": "البلد",
+    "nama_latin": "Al-Balad",
+    "total_ayat": "20"
+  },
+  {
+    "id": "91",
+    "name": "الشمس",
+    "nama_latin": "Ash-Shams",
+    "total_ayat": "15"
+  },
+  {
+    "id": "92",
+    "name": "الليل",
+    "nama_latin": "Al-Layl",
+    "total_ayat": "21"
+  },
+  {
+    "id": "93",
+    "name": "الضحى",
+    "nama_latin": "Ad-Duhaa",
+    "total_ayat": "11"
+  },
+  {
+    "id": "94",
+    "name": "الشرح",
+    "nama_latin": "Ash-Sharh",
+    "total_ayat": "8"
+  },
+  {
+    "id": "95",
+    "name": "التين",
+    "nama_latin": "At-Tin",
+    "total_ayat": "8"
+  },
+  {
+    "id": "96",
+    "name": "العلق",
+    "nama_latin": "Al-'Alaq",
+    "total_ayat": "19"
+  },
+  {
+    "id": "97",
+    "name": "القدر",
+    "nama_latin": "Al-Qadr",
+    "total_ayat": "5"
+  },
+  {
+    "id": "98",
+    "name": "البينة",
+    "nama_latin": "Al-Bayyinah",
+    "total_ayat": "8"
+  },
+  {
+    "id": "99",
+    "name": "الزلزلة",
+    "nama_latin": "Az-Zalzalah",
+    "total_ayat": "8"
+  },
+  {
+    "id": "100",
+    "name": "العاديات",
+    "nama_latin": "Al-'Adiyat",
+    "total_ayat": "11"
+  },
+  {
+    "id": "101",
+    "name": "القارعة",
+    "nama_latin": "Al-Qari'ah",
+    "total_ayat": "11"
+  },
+  {
+    "id": "102",
+    "name": "التكاثر",
+    "nama_latin": "At-Takathur",
+    "total_ayat": "8"
+  },
+  {
+    "id": "103",
+    "name": "العصر",
+    "nama_latin": "Al-'Asr",
+    "total_ayat": "3"
+  },
+  {
+    "id": "104",
+    "name": "الهمزة",
+    "nama_latin": "Al-Humazah",
+    "total_ayat": "9"
+  },
+  {
+    "id": "105",
+    "name": "الفيل",
+    "nama_latin": "Al-Fil",
+    "total_ayat": "5"
+  },
+  {
+    "id": "106",
+    "name": "قريش",
+    "nama_latin": "Quraysh",
+    "total_ayat": "4"
+  },
+  {
+    "id": "107",
+    "name": "الماعون",
+    "nama_latin": "Al-Ma'un",
+    "total_ayat": "7"
+  },
+  {
+    "id": "108",
+    "name": "الكوثر",
+    "nama_latin": "Al-Kawthar",
+    "total_ayat": "3"
+  },
+  {
+    "id": "109",
+    "name": "الكافرون",
+    "nama_latin": "Al-Kafirun",
+    "total_ayat": "6"
+  },
+  {
+    "id": "110",
+    "name": "النصر",
+    "nama_latin": "An-Nasr",
+    "total_ayat": "3"
+  },
+  {
+    "id": "111",
+    "name": "المسد",
+    "nama_latin": "Al-Masad",
+    "total_ayat": "5"
+  },
+  {
+    "id": "112",
+    "name": "الإخلاص",
+    "nama_latin": "Al-Ikhlas",
+    "total_ayat": "4"
+  },
+  {
+    "id": "113",
+    "name": "الفلق",
+    "nama_latin": "Al-Falaq",
+    "total_ayat": "5"
+  },
+  {
+    "id": "114",
+    "name": "الناس",
+    "nama_latin": "An-Nas",
+    "total_ayat": "6"
+  }
+]

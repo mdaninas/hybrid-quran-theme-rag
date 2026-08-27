@@ -1,0 +1,458 @@
+[
+  {
+    "id_surah": "1",
+    "arti_nama": "Pembukaan"
+  },
+  {
+    "id_surah": "2",
+    "arti_nama": "Sapi Betina"
+  },
+  {
+    "id_surah": "3",
+    "arti_nama": "Keluarga Imran"
+  },
+  {
+    "id_surah": "4",
+    "arti_nama": "Wanita"
+  },
+  {
+    "id_surah": "5",
+    "arti_nama": "Jamuan (Hidangan Makanan)"
+  },
+  {
+    "id_surah": "6",
+    "arti_nama": "Binatang Ternak"
+  },
+  {
+    "id_surah": "7",
+    "arti_nama": "Tempat-tempat Tinggi"
+  },
+  {
+    "id_surah": "8",
+    "arti_nama": "Rampasan Perang"
+  },
+  {
+    "id_surah": "9",
+    "arti_nama": "Pengampunan"
+  },
+  {
+    "id_surah": "10",
+    "arti_nama": "Yunus"
+  },
+  {
+    "id_surah": "11",
+    "arti_nama": "Hud"
+  },
+  {
+    "id_surah": "12",
+    "arti_nama": "Yusuf"
+  },
+  {
+    "id_surah": "13",
+    "arti_nama": "Guruh (Petir)"
+  },
+  {
+    "id_surah": "14",
+    "arti_nama": "Ibrahim"
+  },
+  {
+    "id_surah": "15",
+    "arti_nama": "Bukit"
+  },
+  {
+    "id_surah": "16",
+    "arti_nama": "Lebah Madu"
+  },
+  {
+    "id_surah": "17",
+    "arti_nama": "Perjalanan Malam"
+  },
+  {
+    "id_surah": "18",
+    "arti_nama": "Para Penghuni Gua"
+  },
+  {
+    "id_surah": "19",
+    "arti_nama": "Maryam"
+  },
+  {
+    "id_surah": "20",
+    "arti_nama": "Tha-Ha"
+  },
+  {
+    "id_surah": "21",
+    "arti_nama": "Para Nabi"
+  },
+  {
+    "id_surah": "22",
+    "arti_nama": "Haji"
+  },
+  {
+    "id_surah": "23",
+    "arti_nama": "Orang-orang Mukmin"
+  },
+  {
+    "id_surah": "24",
+    "arti_nama": "Cahaya"
+  },
+  {
+    "id_surah": "25",
+    "arti_nama": "Pembeda"
+  },
+  {
+    "id_surah": "26",
+    "arti_nama": "Penyair"
+  },
+  {
+    "id_surah": "27",
+    "arti_nama": "Semut"
+  },
+  {
+    "id_surah": "28",
+    "arti_nama": "Kisah-kisah"
+  },
+  {
+    "id_surah": "29",
+    "arti_nama": "Laba-laba"
+  },
+  {
+    "id_surah": "30",
+    "arti_nama": "Bangsa Romawi"
+  },
+  {
+    "id_surah": "31",
+    "arti_nama": "Luqman"
+  },
+  {
+    "id_surah": "32",
+    "arti_nama": "Sujud"
+  },
+  {
+    "id_surah": "33",
+    "arti_nama": "Golongan yang Bersekutu"
+  },
+  {
+    "id_surah": "34",
+    "arti_nama": "Saba\\'"
+  },
+  {
+    "id_surah": "35",
+    "arti_nama": "Pencipta"
+  },
+  {
+    "id_surah": "36",
+    "arti_nama": "Yas Sin"
+  },
+  {
+    "id_surah": "37",
+    "arti_nama": "Barisan-barisan"
+  },
+  {
+    "id_surah": "38",
+    "arti_nama": "Shad"
+  },
+  {
+    "id_surah": "39",
+    "arti_nama": "Para Rombongan"
+  },
+  {
+    "id_surah": "40",
+    "arti_nama": "Sang Maha Pengampun"
+  },
+  {
+    "id_surah": "41",
+    "arti_nama": "Yang Dijelaskan"
+  },
+  {
+    "id_surah": "42",
+    "arti_nama": "Musyawarah"
+  },
+  {
+    "id_surah": "43",
+    "arti_nama": "Perhiasan"
+  },
+  {
+    "id_surah": "44",
+    "arti_nama": "Kabut"
+  },
+  {
+    "id_surah": "45",
+    "arti_nama": "Yang Bertekuk Lutut"
+  },
+  {
+    "id_surah": "46",
+    "arti_nama": "Bukit-bukir Pasir"
+  },
+  {
+    "id_surah": "47",
+    "arti_nama": "Muhammad"
+  },
+  {
+    "id_surah": "48",
+    "arti_nama": "Kemenangan"
+  },
+  {
+    "id_surah": "49",
+    "arti_nama": "Kamar-kamar"
+  },
+  {
+    "id_surah": "50",
+    "arti_nama": "Qaf"
+  },
+  {
+    "id_surah": "51",
+    "arti_nama": "Angin yang Menerbangkan"
+  },
+  {
+    "id_surah": "52",
+    "arti_nama": "Bukit"
+  },
+  {
+    "id_surah": "53",
+    "arti_nama": "Bintang"
+  },
+  {
+    "id_surah": "54",
+    "arti_nama": "Bulan"
+  },
+  {
+    "id_surah": "55",
+    "arti_nama": "Yang Maha Pemurah"
+  },
+  {
+    "id_surah": "56",
+    "arti_nama": "Hari Kiamat"
+  },
+  {
+    "id_surah": "57",
+    "arti_nama": "Besi"
+  },
+  {
+    "id_surah": "58",
+    "arti_nama": "Wanita yang Menggugat"
+  },
+  {
+    "id_surah": "59",
+    "arti_nama": "Pengusiran"
+  },
+  {
+    "id_surah": "60",
+    "arti_nama": "Wanita yang Diuji"
+  },
+  {
+    "id_surah": "61",
+    "arti_nama": "Barisan"
+  },
+  {
+    "id_surah": "62",
+    "arti_nama": "Hari Jum\\'at"
+  },
+  {
+    "id_surah": "63",
+    "arti_nama": "Kaum Munafik"
+  },
+  {
+    "id_surah": "64",
+    "arti_nama": "Hari Dinampakkan Kesalahan"
+  },
+  {
+    "id_surah": "65",
+    "arti_nama": "Perceraian"
+  },
+  {
+    "id_surah": "66",
+    "arti_nama": "Mengharamkan"
+  },
+  {
+    "id_surah": "67",
+    "arti_nama": "Kerajaan"
+  },
+  {
+    "id_surah": "68",
+    "arti_nama": "Pena"
+  },
+  {
+    "id_surah": "69",
+    "arti_nama": "Kenyataan (Hari Kiamat)"
+  },
+  {
+    "id_surah": "70",
+    "arti_nama": "Tempat yang Naik"
+  },
+  {
+    "id_surah": "71",
+    "arti_nama": "Nuh"
+  },
+  {
+    "id_surah": "72",
+    "arti_nama": "Jin"
+  },
+  {
+    "id_surah": "73",
+    "arti_nama": "Orang yang Berselimut"
+  },
+  {
+    "id_surah": "74",
+    "arti_nama": "Orang yang Berkemul"
+  },
+  {
+    "id_surah": "75",
+    "arti_nama": "Hari Berbangkit"
+  },
+  {
+    "id_surah": "76",
+    "arti_nama": "Manusia"
+  },
+  {
+    "id_surah": "77",
+    "arti_nama": "Malaikat-malaikan yang Diutus"
+  },
+  {
+    "id_surah": "78",
+    "arti_nama": "Berita Besar"
+  },
+  {
+    "id_surah": "79",
+    "arti_nama": "Malaikat yang Mencabut"
+  },
+  {
+    "id_surah": "80",
+    "arti_nama": "Ia Bermuka Masam"
+  },
+  {
+    "id_surah": "81",
+    "arti_nama": "Menggulung"
+  },
+  {
+    "id_surah": "82",
+    "arti_nama": "Terbelah"
+  },
+  {
+    "id_surah": "83",
+    "arti_nama": "Orang-orang Curang"
+  },
+  {
+    "id_surah": "84",
+    "arti_nama": "Terbelah"
+  },
+  {
+    "id_surah": "85",
+    "arti_nama": "Gugusan Bintang"
+  },
+  {
+    "id_surah": "86",
+    "arti_nama": "Yang Datang di Malam Hari"
+  },
+  {
+    "id_surah": "87",
+    "arti_nama": "Yang Paling Tinggi"
+  },
+  {
+    "id_surah": "88",
+    "arti_nama": "Hari Pembalasan"
+  },
+  {
+    "id_surah": "89",
+    "arti_nama": "Fajar"
+  },
+  {
+    "id_surah": "90",
+    "arti_nama": "Negeri"
+  },
+  {
+    "id_surah": "91",
+    "arti_nama": "Matahari"
+  },
+  {
+    "id_surah": "92",
+    "arti_nama": "Malam"
+  },
+  {
+    "id_surah": "93",
+    "arti_nama": "Waktu Dhuha"
+  },
+  {
+    "id_surah": "94",
+    "arti_nama": "Melapangkan"
+  },
+  {
+    "id_surah": "95",
+    "arti_nama": "Buah Tin"
+  },
+  {
+    "id_surah": "96",
+    "arti_nama": "Segumpal Darah"
+  },
+  {
+    "id_surah": "97",
+    "arti_nama": "Kemuliaan"
+  },
+  {
+    "id_surah": "98",
+    "arti_nama": "Pembuktian"
+  },
+  {
+    "id_surah": "99",
+    "arti_nama": "Kegoncangan"
+  },
+  {
+    "id_surah": "100",
+    "arti_nama": "Berlari Kencang"
+  },
+  {
+    "id_surah": "101",
+    "arti_nama": "Hari Kiamat"
+  },
+  {
+    "id_surah": "102",
+    "arti_nama": "Bermegah-megahan"
+  },
+  {
+    "id_surah": "103",
+    "arti_nama": "Waktu Sore"
+  },
+  {
+    "id_surah": "104",
+    "arti_nama": "Pengumpat"
+  },
+  {
+    "id_surah": "105",
+    "arti_nama": "Gajah"
+  },
+  {
+    "id_surah": "106",
+    "arti_nama": "Suku Quraisy"
+  },
+  {
+    "id_surah": "107",
+    "arti_nama": "Barang yang Berguna"
+  },
+  {
+    "id_surah": "108",
+    "arti_nama": "Nikmat Berlimpah"
+  },
+  {
+    "id_surah": "109",
+    "arti_nama": "Orang-orang Kafir"
+  },
+  {
+    "id_surah": "110",
+    "arti_nama": "Pertolongan"
+  },
+  {
+    "id_surah": "111",
+    "arti_nama": "Gejolak Api (Sabut)"
+  },
+  {
+    "id_surah": "112",
+    "arti_nama": "Ikhlash"
+  },
+  {
+    "id_surah": "113",
+    "arti_nama": "Waktu Shubuh"
+  },
+  {
+    "id_surah": "114",
+    "arti_nama": "Umat Manusia"
+  }
+]

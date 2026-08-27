@@ -1,0 +1,11 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+websockets>=14,<17
+langchain-core>=1.2,<2
+langgraph>=1,<2
+langchain-openai>=1.1,<2
+langchain-pinecone>=0.2,<0.3
+langchain-neo4j>=0.6,<1
+neo4j>=5.28,<7
+pinecone>=6,<8
+python-dotenv>=1,<2

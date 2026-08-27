@@ -1,0 +1,22 @@
+# Backup repo lama (disimpan lokal, tidak ikut ke remote)
+*.git-lama-backup/
+
+# Arsip dataset yang tidak dirujuk kode maupun notebook
+quranrag/data/
+
+# Artefak sesi tooling
+output/
+.playwright-cli/
+.claude/
+
+# Dokumen kerja agent & config editor (dipakai lokal, tidak ikut ke repo)
+AGENTS.md
+CURSOR.md
+sempro.code-workspace
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db

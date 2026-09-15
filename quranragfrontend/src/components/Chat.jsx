@@ -1,579 +1,248 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { SESSION_GRAPH_KEY, SESSION_KEY, WS_URL } from "../constants";
-import {
-  BookOpenIcon,
-  ChevronRightIcon,
-  SendIcon,
-} from "./Icons";
+import { MAX_QUESTION_LENGTH, SESSION_KEY, WS_URL } from "../constants";
+import { emptyEvidence, normalizeEvidence, readMessages, saveEvidence, writeStorage } from "../session";
+import { BookOpenIcon, ChevronRightIcon, SendIcon } from "./Icons";
 
-const suggestedPrompts = [
-  "Apa makna sabar dalam Al-Qur'an?",
-  "Ayat tentang ketenangan hati",
-  "Bagaimana Al-Qur'an menjelaskan keadilan?",
-];
-
+const suggestions = ["Apa makna sabar dalam Al-Qur'an?", "Ayat tentang ketenangan hati", "Bagaimana Al-Qur'an menjelaskan keadilan?"];
 const progressLabels = {
-  STEP1: "Memahami pertanyaanmu",
-  STEP2: "Menemukan tema yang relevan",
-  STEP3: "Menelusuri hubungan ayat",
-  STEP4: "Mengumpulkan rujukan terbaik",
+  STEP1: "Memahami pertanyaanmu", STEP2: "Menemukan tema yang relevan",
+  STEP3: "Menelusuri hubungan ayat", STEP4: "Mengumpulkan sumber ayat",
   STEP5: "Menyusun jawaban dan sumber",
 };
 
-const SURAH_NAMES = [
-  "Al-Fatihah", "Al-Baqarah", "Ali 'Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am",
-  "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim",
-  "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Taha", "Al-Anbya", "Al-Hajj",
-  "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas",
-  "Al-'Ankabut", "Ar-Rum", "Luqman", "As-Sajdah", "Al-Ahzab", "Saba", "Fatir",
-  "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir", "Fussilat", "Ash-Shuraa",
-  "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiyah", "Al-Ahqaf", "Muhammad", "Al-Fath",
-  "Al-Hujurat", "Qaf", "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman",
-  "Al-Waqi'ah", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahanah", "As-Saf",
-  "Al-Jumu'ah", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk",
-  "Al-Qalam", "Al-Haqqah", "Al-Ma'arij", "Nuh", "Al-Jinn", "Al-Muzzammil",
-  "Al-Muddaththir", "Al-Qiyamah", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at",
-  "'Abasa", "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj",
-  "At-Tariq", "Al-A'la", "Al-Ghashiyah", "Al-Fajr", "Al-Balad", "Ash-Shams",
-  "Al-Layl", "Ad-Duhaa", "Ash-Sharh", "At-Tin", "Al-'Alaq", "Al-Qadr", "Al-Bayyinah",
-  "Az-Zalzalah", "Al-'Adiyat", "Al-Qari'ah", "At-Takathur", "Al-'Asr", "Al-Humazah",
-  "Al-Fil", "Quraysh", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr", "Al-Masad",
-  "Al-Ikhlas", "Al-Falaq", "An-Nas",
-];
-
-const SURAH_NAME_TO_ID = SURAH_NAMES.reduce((map, name, index) => {
-  map[normalizeSurahName(name)] = index + 1;
-  return map;
-}, {});
-
-function normalizeSurahName(name) {
-  return name
-    .toLowerCase()
-    .replace(/[''`]/g, "")
-    .replace(/-/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function resolveSurahId(name) {
-  const normalized = normalizeSurahName(name);
-  if (SURAH_NAME_TO_ID[normalized]) return SURAH_NAME_TO_ID[normalized];
-  if (normalized.startsWith("al ")) {
-    return SURAH_NAME_TO_ID[normalized.slice(3)] ?? null;
-  }
-  return null;
-}
-
-function readSession() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return { messages: [], sourceCount: 0, nextId: 0 };
-    const data = JSON.parse(raw);
-    const messages = Array.isArray(data.messages) ? data.messages : [];
-    const maxId = messages.reduce((max, message) => Math.max(max, message.id || 0), 0);
-    return {
-      messages,
-      sourceCount: typeof data.sourceCount === "number" ? data.sourceCount : 0,
-      nextId: typeof data.nextId === "number" ? data.nextId : maxId,
-    };
-  } catch {
-    return { messages: [], sourceCount: 0, nextId: 0 };
-  }
-}
-
-function writeSession(data) {
-  try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
-  } catch {
-    // Storage can be disabled by the browser.
-  }
-}
-
-function persistGraph(patch) {
-  try {
-    const existing = JSON.parse(sessionStorage.getItem(SESSION_GRAPH_KEY) || "{}");
-    sessionStorage.setItem(SESSION_GRAPH_KEY, JSON.stringify({ ...existing, ...patch }));
-  } catch {
-    // Storage can be disabled by the browser.
-  }
-}
-
-function preprocessCitations(text) {
-  if (!text || typeof text !== "string") return text;
-
-  const placeholders = [];
-  const stash = (label, verseId) => {
-    const index = placeholders.length;
-    placeholders.push({ label, verseId });
-    return `\u0000CITE${index}\u0000`;
-  };
-
-  let result = text;
-
-  result = result.replace(
-    /(?:QS\.?\s+)([A-Za-z][A-Za-z'\- ]+?)\s+(\d{1,3}):(\d{1,3})/gi,
-    (match, _name, surah, ayah) => stash(match, `${surah}:${ayah}`),
-  );
-
-  result = result.replace(
-    /\(([A-Za-z][A-Za-z'\- ]+?)[: ](\d{1,3})\)/g,
-    (match, name, ayah) => {
-      const surahId = resolveSurahId(name.trim());
-      if (!surahId) return match;
-      return stash(match, `${surahId}:${ayah}`);
-    },
-  );
-
-  result = result.replace(
-    /([A-Za-z][A-Za-z'\- ]+?)\s+(\d{1,3}):(\d{1,3})/g,
-    (match, name, surah, ayah) => {
-      if (/^QS\.?$/i.test(name.trim())) return match;
-      const resolved = resolveSurahId(name.trim());
-      if (resolved && String(resolved) === surah) {
-        return stash(match, `${surah}:${ayah}`);
-      }
-      return match;
-    },
-  );
-
-  result = result.replace(/\b(\d{1,3}):(\d{1,3})\b/g, (match, surah, ayah) => {
-    const surahNum = parseInt(surah, 10);
-    const ayahNum = parseInt(ayah, 10);
-    if (surahNum < 1 || surahNum > 114 || ayahNum < 1) return match;
-    return stash(match, `${surah}:${ayah}`);
-  });
-
-  placeholders.forEach(({ label, verseId }, index) => {
-    result = result.replace(`\u0000CITE${index}\u0000`, `[${label}](verse:${verseId})`);
-  });
-
-  return result;
-}
-
-function extractSources(retrieval) {
-  const uniqueSources = new Map();
-  if (!Array.isArray(retrieval)) return [];
-
-  retrieval.forEach((group) => {
-    const verses = Array.isArray(group?.ayat_collection) ? group.ayat_collection : [];
-    verses.forEach((verse) => {
-      const key = verse.id_surah_ayat || `${verse.id_surah}:${verse.id_ayat}`;
-      if (!uniqueSources.has(key)) {
-        uniqueSources.set(key, {
-          ...verse,
-          full_path: group.full_path || null,
-          node_leaf: group.node_leaf || null,
-          node_root: group.node_root || null,
-        });
-      }
-    });
-  });
-
-  return Array.from(uniqueSources.values());
-}
-
-function cleanAnswer(payload) {
-  const candidate =
-    payload?.jawaban_final?.content ??
-    payload?.text?.content ??
-    payload?.text ??
-    payload?.answer ??
-    payload?.output ??
-    (typeof payload === "string" ? payload : null);
-
-  if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
-  return "Jawaban belum tersedia. Coba ajukan pertanyaan dengan tema yang lebih spesifik.";
-}
-
-function AssistantAvatar() {
-  return <span className="assistant-avatar"><BookOpenIcon size={16} /></span>;
-}
-
-function AssistantMessage({ text, selectedVerseId, onSelectVerse }) {
-  const [copied, setCopied] = useState(false);
-  const processed = useMemo(() => preprocessCitations(text), [text]);
-
+function AssistantMessage({ message, selectedVerseId, onSelectVerse }) {
+  const [copyStatus, setCopyStatus] = useState("Salin");
+  const timer = useRef(null);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   const components = useMemo(() => ({
     a: ({ href, children }) => {
       if (href?.startsWith("verse:")) {
         const verseId = href.slice(6);
-        const isSelected = selectedVerseId === verseId;
-        return (
-          <button
-            className={`verse-citation${isSelected ? " verse-citation-active" : ""}`}
-            onClick={() => onSelectVerse?.(verseId)}
-            type="button"
-          >
-            {children}
-          </button>
-        );
+        if (!message.evidence.sources.some((s) => s.id_surah_ayat === verseId)) return <span>{children}</span>;
+        return <button className={`verse-citation${selectedVerseId === verseId ? " verse-citation-active" : ""}`}
+          onClick={() => onSelectVerse(verseId, message.evidence)} type="button">{children}</button>;
       }
-      return (
-        <a href={href} rel="noopener noreferrer" target="_blank">
-          {children}
-        </a>
-      );
+      return <a href={href} rel="noopener noreferrer" target="_blank">{children}</a>;
     },
-  }), [selectedVerseId, onSelectVerse]);
-
-  const handleCopy = async () => {
+  }), [message.evidence, selectedVerseId, onSelectVerse]);
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(message.text);
+      setCopyStatus("Tersalin");
     } catch {
-      // Clipboard can be blocked by the browser.
+      setCopyStatus("Gagal menyalin");
     }
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setCopyStatus("Salin"), 1800);
   };
-
-  return (
-    <div className="assistant-message-body">
-      <ReactMarkdown
-        components={components}
-        remarkPlugins={[remarkGfm]}
-        urlTransform={(url) =>
-          url.startsWith("verse:") ? url : defaultUrlTransform(url)
-        }
-      >
-        {processed}
-      </ReactMarkdown>
-      <button
-        aria-label="Salin jawaban"
-        className="message-copy-button"
-        onClick={handleCopy}
-        type="button"
-      >
-        {copied ? "Tersalin" : "Salin"}
-      </button>
-    </div>
-  );
+  return <div className="assistant-message-body">
+    <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}
+      urlTransform={(url) => /^verse:\d{1,3}:\d{1,3}$/.test(url) ? url : defaultUrlTransform(url)}>
+      {message.text}
+    </ReactMarkdown>
+    <button aria-label="Salin jawaban" className="message-copy-button" onClick={copy} type="button">{copyStatus}</button>
+  </div>;
 }
 
-export default function Chat({
-  onConnectionChange,
-  onOpenSources,
-  onUpdateCypher,
-  onUpdateSkorTM,
-  onUpdateSources,
-  onSelectVerse,
-  profile,
-  selectedVerseId,
-}) {
-  const initialSessionRef = useRef(null);
-  if (!initialSessionRef.current) {
-    initialSessionRef.current = readSession();
-  }
-
-  const [messages, setMessages] = useState(() => initialSessionRef.current.messages);
+export default function Chat({ onConnectionChange, onOpenSources, onUpdateEvidence, onSelectVerse, profile, selectedVerseId }) {
+  const [messages, setMessages] = useState(readMessages);
   const [input, setInput] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [activeStep, setActiveStep] = useState(null);
-  const [agentThought, setAgentThought] = useState(null);
-  const [sourceCount, setSourceCount] = useState(() => initialSessionRef.current.sourceCount);
-  const [connectionStatus, setConnectionStatus] = useState("connecting");
-
+  const [thought, setThought] = useState("");
+  const [connection, setConnection] = useState("connecting");
+  const [error, setError] = useState("");
+  const [storageError, setStorageError] = useState(false);
   const wsRef = useRef(null);
-  const reconnectRef = useRef(null);
-  const pendingRef = useRef([]);
-  const messagesEndRef = useRef(null);
-  const messageIdRef = useRef(initialSessionRef.current.nextId);
-  const onConnectionChangeRef = useRef(onConnectionChange);
-  const onUpdateCypherRef = useRef(onUpdateCypher);
-  const onUpdateSkorTMRef = useRef(onUpdateSkorTM);
-  const onUpdateSourcesRef = useRef(onUpdateSources);
+  const activeRef = useRef(null);
+  const evidenceRef = useRef(emptyEvidence());
+  const timerRef = useRef(null);
+  const scrollRef = useRef(null);
+  const bottomRef = useRef(null);
+  const followScroll = useRef(true);
+  const callbacks = useRef({ onConnectionChange, onUpdateEvidence });
+  useEffect(() => { callbacks.current = { onConnectionChange, onUpdateEvidence }; }, [onConnectionChange, onUpdateEvidence]);
 
-  const firstName = profile.name === "Tamu" ? null : profile.name.split(" ")[0];
-
-  useEffect(() => {
-    onConnectionChangeRef.current = onConnectionChange;
-    onUpdateCypherRef.current = onUpdateCypher;
-    onUpdateSkorTMRef.current = onUpdateSkorTM;
-    onUpdateSourcesRef.current = onUpdateSources;
-  }, [onConnectionChange, onUpdateCypher, onUpdateSkorTM, onUpdateSources]);
-
-  useEffect(() => {
-    writeSession({
-      messages,
-      sourceCount,
-      nextId: messageIdRef.current,
-    });
-  }, [messages, sourceCount]);
-
-  useEffect(() => {
-    let stopped = false;
-
-    const setConnection = (status) => {
-      setConnectionStatus(status);
-      onConnectionChangeRef.current?.(status);
-    };
-
-    const connect = () => {
-      if (stopped) return;
-      setConnection("connecting");
-      const ws = new WebSocket(WS_URL);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        if (stopped || wsRef.current !== ws) return;
-        setConnection("connected");
-        if (pendingRef.current.length) {
-          pendingRef.current.forEach((payload) => ws.send(payload));
-          pendingRef.current = [];
-          setIsProcessing(true);
-          setActiveStep("STEP1");
-        }
-      };
-
-      ws.onmessage = (event) => {
-        if (wsRef.current !== ws) return;
-        let data;
-        try {
-          data = JSON.parse(event.data);
-        } catch {
-          messageIdRef.current += 1;
-          setMessages((current) => [
-            ...current,
-            { id: messageIdRef.current, role: "assistant", text: String(event.data) },
-          ]);
-          setIsProcessing(false);
-          return;
-        }
-
-        if (data.error) {
-          messageIdRef.current += 1;
-          setMessages((current) => [
-            ...current,
-            {
-              id: messageIdRef.current,
-              role: "assistant",
-              text: typeof data.message === "string" && data.message.trim()
-                ? data.message.trim()
-                : "Terjadi kesalahan saat memproses pertanyaan. Silakan coba lagi.",
-            },
-          ]);
-          setIsProcessing(false);
-          setActiveStep(null);
-          setAgentThought(null);
-          return;
-        }
-
-        if (!data.agent) return;
-
-        const { agent } = data;
-        const payload = data.payload || {};
-        setActiveStep(agent);
-        setIsProcessing(agent !== "STEP5");
-
-        if (typeof payload.thought === "string" && payload.thought.trim()) {
-          setAgentThought(payload.thought.trim());
-        }
-
-        const thematicScores = payload.tematikskor ?? [];
-        const cyphers = payload.list_cypher_frontend ?? payload.list_cypher ?? [];
-        if (Array.isArray(cyphers) && cyphers.length) {
-          onUpdateCypherRef.current?.(cyphers);
-          onUpdateSkorTMRef.current?.(thematicScores);
-          persistGraph({ cypher: cyphers, thematicScores });
-        }
-
-        const extractedSources = extractSources(payload.gabungan_retriever);
-        if (extractedSources.length) {
-          setSourceCount(extractedSources.length);
-          onUpdateSourcesRef.current?.(extractedSources);
-          persistGraph({ sources: extractedSources, sourceCount: extractedSources.length });
-        }
-
-        if (agent === "STEP5") {
-          messageIdRef.current += 1;
-          setMessages((current) => [
-            ...current,
-            {
-              id: messageIdRef.current,
-              role: "assistant",
-              text: cleanAnswer(payload),
-            },
-          ]);
-          setIsProcessing(false);
-          setActiveStep(null);
-          setAgentThought(null);
-        }
-      };
-
-      ws.onclose = () => {
-        if (stopped || wsRef.current !== ws) return;
-        setConnection("disconnected");
-        reconnectRef.current = window.setTimeout(connect, 1800);
-      };
-    };
-
-    connect();
-    return () => {
-      stopped = true;
-      if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
-      const ws = wsRef.current;
-      wsRef.current = null;
-      if (ws) {
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onclose = null;
-        ws.onerror = null;
-        ws.close();
-      }
-    };
+  const finish = useCallback((reason = "") => {
+    window.clearTimeout(timerRef.current);
+    activeRef.current = null;
+    setProcessing(false);
+    setActiveStep(null);
+    setThought("");
+    if (reason) setError(reason);
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, isProcessing]);
+    setStorageError(!writeStorage(SESSION_KEY, messages.slice(-40)));
+  }, [messages]);
 
-  const sendQuestion = useCallback((question) => {
+  useEffect(() => {
+    let stopped = false;
+    let reconnectTimer;
+    let attempts = 0;
+    const setStatus = (status) => {
+      setConnection(status);
+      callbacks.current.onConnectionChange(status);
+    };
+    const connect = () => {
+      if (stopped) return;
+      setStatus("connecting");
+      let socket;
+      try {
+        socket = new WebSocket(WS_URL);
+      } catch {
+        setStatus("disconnected");
+        setError("Koneksi belum dapat dibuka. Periksa alamat layanan.");
+        return;
+      }
+      wsRef.current = socket;
+      socket.onopen = () => {
+        if (stopped || wsRef.current !== socket) return;
+        attempts = 0;
+        setStatus("connected");
+      };
+      socket.onmessage = (event) => {
+        if (stopped || wsRef.current !== socket || !activeRef.current) return;
+        let data;
+        try { data = JSON.parse(event.data); } catch { finish("Respons server tidak valid. Silakan coba lagi."); return; }
+        if (!data || typeof data !== "object") { finish("Respons server tidak valid."); return; }
+        if (data.request_id && data.request_id !== activeRef.current.id) return;
+        if (data.error || data.type === "error") { finish(data.message || "Pertanyaan gagal diproses."); return; }
+        if (data.type === "cancelled") { finish("Pemrosesan dihentikan."); return; }
+        if (data.type === "done") { finish("Server selesai tanpa jawaban. Silakan coba lagi."); return; }
+        if (data.type !== "step" || !progressLabels[data.agent]) return;
+        const payload = data.payload || {};
+        setActiveStep(data.agent);
+        setThought(typeof payload.thought === "string" ? payload.thought : "");
+        if (data.agent === "STEP4") {
+          evidenceRef.current = normalizeEvidence(payload);
+          callbacks.current.onUpdateEvidence(evidenceRef.current);
+          saveEvidence(evidenceRef.current);
+          setActiveStep("STEP5");
+        }
+        if (data.agent === "STEP5") {
+          if (typeof payload.jawaban_final !== "string" || !payload.jawaban_final.trim()) {
+            finish("Jawaban belum tersedia. Silakan coba lagi."); return;
+          }
+          const message = { id: crypto.randomUUID(), role: "assistant", text: payload.jawaban_final,
+            evidence: evidenceRef.current, requestId: activeRef.current.id };
+          setMessages((current) => [...current, message].slice(-40));
+          finish();
+        }
+      };
+      socket.onerror = () => { /* onclose handles recovery once, including failed handshakes. */ };
+      socket.onclose = () => {
+        if (stopped || wsRef.current !== socket) return;
+        setStatus("disconnected");
+        if (activeRef.current) finish("Koneksi terputus saat memproses. Coba kirim ulang pertanyaan.");
+        reconnectTimer = window.setTimeout(connect, Math.min(1000 * 2 ** attempts++, 15000));
+      };
+    };
+    connect();
+    return () => {
+      stopped = true;
+      window.clearTimeout(reconnectTimer);
+      window.clearTimeout(timerRef.current);
+      const socket = wsRef.current;
+      wsRef.current = null;
+      if (socket) { socket.onclose = null; socket.onmessage = null; socket.onopen = null; socket.close(); }
+    };
+  }, [finish]);
+
+  useEffect(() => {
+    if (followScroll.current) bottomRef.current?.scrollIntoView({
+      behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "end",
+    });
+  }, [messages, processing, error]);
+
+  const sendQuestion = (question) => {
     const text = question.trim();
-    if (!text || isProcessing) return;
-
-    messageIdRef.current += 1;
-    setMessages((current) => [
-      ...current,
-      { id: messageIdRef.current, role: "user", text },
-    ]);
+    if (!text || activeRef.current) return;
+    if (text.length > MAX_QUESTION_LENGTH) { setError(`Pertanyaan maksimal ${MAX_QUESTION_LENGTH} karakter.`); return; }
+    const socket = wsRef.current;
+    if (socket?.readyState !== WebSocket.OPEN) { setError("Koneksi belum siap. Pertanyaan tetap tersimpan di kolom input."); setInput(text); return; }
+    const id = crypto.randomUUID();
+    activeRef.current = { id, text };
+    evidenceRef.current = emptyEvidence();
+    followScroll.current = true;
+    setError(""); setProcessing(true); setActiveStep("STEP1"); setThought("");
+    // Keep the question available for retry if the connection fails.
+    try { socket.send(JSON.stringify({ type: "ask", request_id: id, pertanyaan: text })); }
+    catch { finish("Pertanyaan gagal dikirim. Silakan coba lagi."); return; }
+    setMessages((current) => [...current, { id: crypto.randomUUID(), role: "user", text, evidence: emptyEvidence() }].slice(-40));
     setInput("");
-    setIsProcessing(true);
-    setAgentThought(null);
-    setSourceCount(0);
-    onUpdateSources?.([]);
-    onUpdateCypher?.([]);
-    onUpdateSkorTM?.([]);
-    persistGraph({ sources: [], cypher: [], thematicScores: [], sourceCount: 0 });
-
-    const payload = JSON.stringify({ pertanyaan: text });
-    const ws = wsRef.current;
-    if (ws?.readyState === WebSocket.OPEN) {
-      setActiveStep("STEP1");
-      ws.send(payload);
-    } else {
-      pendingRef.current.push(payload);
-      setActiveStep(null);
-    }
-  }, [isProcessing, onUpdateCypher, onUpdateSkorTM, onUpdateSources]);
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    sendQuestion(input);
+    callbacks.current.onUpdateEvidence(emptyEvidence());
+    saveEvidence(emptyEvidence());
+    timerRef.current = window.setTimeout(() => {
+      if (!activeRef.current) return;
+      finish("Respons terlalu lama. Silakan coba lagi.");
+      socket.close();
+    }, 150000);
   };
+  const stop = () => {
+    const active = activeRef.current;
+    if (active && wsRef.current?.readyState === WebSocket.OPEN) {
+      try { wsRef.current.send(JSON.stringify({ type: "cancel", request_id: active.id })); }
+      catch { /* Closing the socket below also cancels the server task. */ }
+    }
+    finish("Pemrosesan dihentikan.");
+    // A new connection prevents a new question racing the server's cancellation.
+    wsRef.current?.close();
+  };
+  const clear = () => {
+    setMessages([]); setError(""); setInput("");
+    callbacks.current.onUpdateEvidence(emptyEvidence()); saveEvidence(emptyEvidence());
+  };
+  const lastQuestion = [...messages].reverse().find((m) => m.role === "user")?.text;
 
-  return (
-    <div className="chat-experience">
-      <div className="chat-heading is-compact">
-        <div>
-          <h1>Tanya peta</h1>
-          {firstName ? <small className="chat-user-name">{firstName}</small> : null}
-          <p>Ajukan tema untuk mengisi atlas.</p>
-        </div>
-        <div className={`compact-connection compact-${connectionStatus}`}>
-          <i /> {connectionStatus === "connected" ? "Siap menjawab" : connectionStatus === "connecting" ? "Menyiapkan koneksi" : "Menunggu koneksi"}
-        </div>
-      </div>
-
-      <div className="messages-scroll" aria-live="polite">
-        {!messages.length && !isProcessing ? (
-          <div className="conversation-empty">
-            <div className="suggestion-grid" aria-label="Contoh pertanyaan">
-              {suggestedPrompts.map((prompt) => (
-                <button key={prompt} onClick={() => sendQuestion(prompt)} type="button">
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="message-list">
-          {messages.map((message) => (
-            <article className={`message-row message-${message.role}`} key={message.id}>
-              {message.role === "assistant" ? <AssistantAvatar /> : null}
-              <div className="message-content">
-                {message.role === "assistant" ? <span className="message-author">Ruang Jelajah</span> : null}
-                <div className="message-bubble">
-                  {message.role === "assistant" ? (
-                    <AssistantMessage
-                      onSelectVerse={onSelectVerse}
-                      selectedVerseId={selectedVerseId}
-                      text={message.text}
-                    />
-                  ) : (
-                    message.text
-                  )}
-                </div>
-                {message.role === "assistant" && sourceCount ? (
-                  <button className="message-source-link" onClick={onOpenSources} type="button">
-                    <BookOpenIcon size={16} /> Lihat {sourceCount} ayat terkait <ChevronRightIcon size={16} />
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-
-          {isProcessing ? (
-            <article className="message-row message-assistant processing-row">
-              <AssistantAvatar />
-              <div className="message-content">
-                <span className="message-author">Ruang Jelajah</span>
-                <div className="progress-card">
-                  {connectionStatus === "connected" ? (
-                    <>
-                      <div className="progress-card-title"><span className="thinking-dots"><i /><i /><i /></span>{progressLabels[activeStep] || "Menyiapkan jawaban"}</div>
-                      {agentThought ? (
-                        <p className="agent-thought">
-                          <span className="agent-thought-label">Langkah agent:</span> {agentThought}
-                        </p>
-                      ) : null}
-                      <div className="progress-track">
-                        {Object.keys(progressLabels).map((step) => (
-                          <span className={step === activeStep ? "active" : ""} key={step} />
-                        ))}
-                      </div>
-                      <small>Biasanya selesai dalam kurang dari satu menit.</small>
-                    </>
-                  ) : (
-                    <>
-                      <div className="progress-card-title">Menunggu koneksi ke server…</div>
-                      <small>Pertanyaan tersimpan dan akan dikirim otomatis.</small>
-                    </>
-                  )}
-                </div>
-              </div>
-            </article>
-          ) : null}
-        </div>
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="composer-area">
-        {connectionStatus !== "connected" ? (
-          <p className="queue-notice">Pertanyaan akan dikirim otomatis saat koneksi kembali.</p>
-        ) : null}
-        <form className="composer" onSubmit={handleSubmit}>
-          <textarea
-            aria-label="Pertanyaan tentang Al-Qur'an"
-            disabled={isProcessing}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                sendQuestion(input);
-              }
-            }}
-            placeholder="Tanyakan tema untuk memetakan ayat…"
-            rows="2"
-            value={input}
-          />
-          <button aria-label="Kirim pertanyaan" className="send-button" disabled={!input.trim() || isProcessing} type="submit">
-            <SendIcon size={20} />
-          </button>
-        </form>
-        <p className="composer-hint">Enter untuk mengirim · Shift + Enter untuk baris baru</p>
-      </div>
+  return <div className="chat-experience">
+    <div className="chat-heading is-compact">
+      <div><h1>Tanya peta</h1><p>{profile.name === "Tamu" ? "Ajukan tema untuk menelusuri ayat." : `Selamat menjelajah, ${profile.name.split(" ")[0]}.`}</p></div>
+      <button className="message-copy-button" type="button" disabled={processing || !messages.length} onClick={clear}>Percakapan baru</button>
     </div>
-  );
+    <div className="messages-scroll" ref={scrollRef} role="log" aria-label="Percakapan" aria-live="polite"
+      onScroll={() => { const el = scrollRef.current; followScroll.current = el.scrollHeight - el.scrollTop - el.clientHeight < 90; }}>
+      {!messages.length && <div className="conversation-empty"><div className="suggestion-grid" aria-label="Contoh pertanyaan">
+        {suggestions.map((prompt) => <button key={prompt} onClick={() => sendQuestion(prompt)} type="button">{prompt}</button>)}
+      </div></div>}
+      <div className="message-list">
+        {messages.map((message) => <article className={`message-row message-${message.role}`} key={message.id}>
+          {message.role === "assistant" && <span className="assistant-avatar"><BookOpenIcon size={16} /></span>}
+          <div className="message-content">
+            {message.role === "assistant" && <span className="message-author">Ruang Jelajah</span>}
+            <div className="message-bubble">{message.role === "assistant"
+              ? <AssistantMessage message={message} selectedVerseId={selectedVerseId} onSelectVerse={onSelectVerse} /> : message.text}</div>
+            {message.role === "assistant" && message.evidence.sources.length > 0 && <button className="message-source-link" onClick={() => onOpenSources(message.evidence)} type="button">
+              <BookOpenIcon size={16} /> Lihat {message.evidence.sources.length} ayat terkait <ChevronRightIcon size={16} />
+            </button>}
+          </div>
+        </article>)}
+        {processing && <article className="message-row message-assistant processing-row">
+          <span className="assistant-avatar"><BookOpenIcon size={16} /></span>
+          <div className="progress-card" role="status">
+            <div className="progress-card-title"><span className="thinking-dots"><i /><i /><i /></span>{progressLabels[activeStep] || "Menyiapkan jawaban"}</div>
+            {thought && <p className="agent-thought">{thought}</p>}
+            <div className="progress-track">{Object.keys(progressLabels).map((step) => <span className={step === activeStep ? "active" : ""} key={step} />)}</div>
+            <button className="message-copy-button" type="button" onClick={stop}>Hentikan</button>
+          </div>
+        </article>}
+      </div>
+      {error && <div className="chat-error" role="alert"><p>{error}</p>{lastQuestion && !processing && <button type="button" className="message-copy-button" disabled={connection !== "connected"} onClick={() => sendQuestion(lastQuestion)}>Coba lagi</button>}</div>}
+      <div ref={bottomRef} />
+    </div>
+    <div className="composer-area">
+      {storageError && <p className="queue-notice" role="status">Riwayat hanya tersedia selama halaman ini terbuka; penyimpanan browser tidak tersedia atau penuh.</p>}
+      {connection !== "connected" && <p className="queue-notice" role="status">Menghubungkan ke server… Anda dapat menulis pertanyaan sambil menunggu.</p>}
+      <form className="composer" onSubmit={(event) => { event.preventDefault(); sendQuestion(input); }}>
+        <textarea aria-label="Pertanyaan tentang Al-Qur'an" aria-describedby="composer-hint" disabled={processing}
+          maxLength={MAX_QUESTION_LENGTH} onChange={(event) => setInput(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); sendQuestion(input); } }}
+          placeholder="Tanyakan tema untuk memetakan ayat…" rows="2" value={input} />
+        <button aria-label="Kirim pertanyaan" className="send-button" disabled={!input.trim() || processing || connection !== "connected"} type="submit"><SendIcon size={20} /></button>
+      </form>
+      <p className="composer-hint" id="composer-hint">Enter untuk mengirim · Shift + Enter untuk baris baru <span>{input.length}/{MAX_QUESTION_LENGTH}</span></p>
+    </div>
+  </div>;
 }

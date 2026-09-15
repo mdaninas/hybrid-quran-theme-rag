@@ -1,133 +1,190 @@
+"""WebSocket transport with input validation, cancellation, and resource limits."""
+import asyncio
 import json
-import os
-from datetime import date, datetime
+import logging
+import re
+import sys
+import time
+from collections import OrderedDict, deque
+from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage
+from fastapi.responses import JSONResponse
 from starlette.websockets import WebSocketDisconnect
 
-from multi_agent import app
+from config import (ALLOWED_ORIGINS, MAX_CONCURRENT_REQUESTS, MAX_FRAME_BYTES,
+                    MAX_QUESTION_LENGTH, REQUEST_TIMEOUT, REQUESTS_PER_MINUTE,
+                    missing_settings)
 
-load_dotenv()
-
-# Matikan tracing LangSmith bila kunci tidak valid (§9.2 #9).
-if os.environ.get("LANGSMITH_TRACING", "").strip().lower() not in ("true", "1", "yes"):
-    os.environ["LANGSMITH_TRACING"] = "false"
-
-api = FastAPI()
+logger = logging.getLogger(__name__)
+PUBLIC_FIELDS = {"thought", "sources", "graphs", "jawaban_final", "citation_status"}
 
 
-def _parse_graph_config_origins():
-    raw = os.environ.get("GRAPH_CONFIG_ORIGINS", "").strip()
-    if raw:
-        origins = [item.strip().rstrip("/") for item in raw.split(",") if item.strip()]
-        if origins:
-            return tuple(origins)
-    return (
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
+class RateLimiter:
+    """Bounded per-process rate limit; production proxies should also limit traffic."""
+    def __init__(self, limit=REQUESTS_PER_MINUTE, capacity=4096):
+        self.limit, self.capacity = limit, capacity
+        self.clients = OrderedDict()
+
+    def allow(self, client, now=None):
+        now = time.monotonic() if now is None else now
+        timestamps = self.clients.setdefault(client, deque())
+        self.clients.move_to_end(client)
+        while timestamps and timestamps[0] <= now - 60:
+            timestamps.popleft()
+        while len(self.clients) > self.capacity:
+            self.clients.popitem(last=False)
+        if len(timestamps) >= self.limit:
+            return False
+        timestamps.append(now)
+        return True
+
+
+@asynccontextmanager
+async def lifespan(application):
+    application.state.slots = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    application.state.limiter = RateLimiter()
+    yield
+    graph_module = sys.modules.get("module.skill.retriever_graph")
+    if graph_module:
+        await graph_module.close_driver()
+
+
+api = FastAPI(title="Qur'an Thematic RAG", version="1.0.0", lifespan=lifespan)
+api.add_middleware(CORSMiddleware, allow_origins=list(ALLOWED_ORIGINS),
+                   allow_methods=["GET"], allow_headers=[])
+
+
+@api.get("/health")
+def health():
+    missing = missing_settings()
+    return JSONResponse(
+        {"status": "not_configured" if missing else "configured", "missing": missing,
+         "services_checked": False}, status_code=503 if missing else 200,
+        headers={"Cache-Control": "no-store"},
     )
 
 
-GRAPH_CONFIG_ORIGINS = _parse_graph_config_origins()
-
-api.add_middleware(
-    CORSMiddleware,
-    allow_origins=list(GRAPH_CONFIG_ORIGINS),
-    allow_methods=["GET"],
-    allow_headers=["*"],
-)
-
-# Pengecualian dari aturan "hanya WebSocket": frontend membutuhkan kredensial Neo4j
-# tanpa meng-inline VITE_* ke bundle JavaScript.
-@api.get("/graph-config")
-def graph_config(request: Request):
-    origin = request.headers.get("origin", "")
-    referer = request.headers.get("referer", "")
-    origin_allowed = origin in GRAPH_CONFIG_ORIGINS
-    referer_allowed = any(referer.startswith(allowed) for allowed in GRAPH_CONFIG_ORIGINS)
-    if not origin_allowed and not referer_allowed:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
-    config_token = os.environ.get("GRAPH_CONFIG_TOKEN", "").strip()
-    if config_token:
-        supplied = request.headers.get("x-graph-config-token", "").strip()
-        if supplied != config_token:
-            raise HTTPException(status_code=403, detail="Forbidden")
-
-    return {
-        "uri": os.environ["NEO4J_LOKAL_URI"],
-        "user": os.environ["NEO4J_LOKAL_USER"],
-        "password": os.environ["NEO4J_LOKAL_PASSWORD"],
-    }
+def get_pipeline():
+    from multi_agent import app
+    return app
 
 
-def to_jsonable(x):
-    if x is None or isinstance(x, (int, float, str, bool)):
-        return x
-    if isinstance(x, (datetime, date)):
-        return x.isoformat()
-    if isinstance(x, bytes):
-        return x.decode("utf-8", errors="ignore")
-    if isinstance(x, (list, tuple, set)):
-        return [to_jsonable(v) for v in x]
-    if isinstance(x, dict):
-        return {str(k): to_jsonable(v) for k, v in x.items()}
-    if isinstance(x, Document):
-        return {
-            "page_content": x.page_content,
-            "metadata": to_jsonable(x.metadata),
-        }
-    if isinstance(x, BaseMessage):
-        return {
-            "type": getattr(x, "type", x.__class__.__name__),
-            "content": x.content,
-            "additional_kwargs": to_jsonable(getattr(x, "additional_kwargs", {})),
-        }
-    return str(x)
+def parse_message(raw):
+    if len(raw.encode("utf-8")) > MAX_FRAME_BYTES:
+        raise ValueError("Pesan terlalu besar.")
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, RecursionError):
+        raise ValueError("Format pesan harus berupa JSON yang valid.") from None
+    if not isinstance(data, dict):
+        raise ValueError("Pesan harus berupa objek JSON.")
+    request_id = data.get("request_id")
+    if request_id is None:
+        request_id = str(uuid4())
+    if not isinstance(request_id, str) or not re.fullmatch(r"[\w-]{1,64}", request_id, flags=re.ASCII):
+        raise ValueError("ID permintaan tidak valid.")
+    if data.get("type") == "cancel":
+        return {"type": "cancel", "request_id": request_id}
+    if data.get("type", "ask") != "ask":
+        raise ValueError("Jenis pesan tidak didukung.")
+    question = data.get("pertanyaan", data.get("text", ""))
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("Pertanyaan tidak boleh kosong.")
+    if len(question.strip()) > MAX_QUESTION_LENGTH:
+        raise ValueError(f"Pertanyaan maksimal {MAX_QUESTION_LENGTH} karakter.")
+    return {"type": "ask", "request_id": request_id, "pertanyaan": question.strip()}
 
 
 @api.websocket("/ws/ask")
 async def ws_ask(ws: WebSocket):
+    if ws.headers.get("origin", "") not in ALLOWED_ORIGINS:
+        await ws.close(code=1008)
+        return
     await ws.accept()
+    running = None
+    active_id = None
+    send_lock = asyncio.Lock()
+
+    async def send(data):
+        async with send_lock:
+            await ws.send_json(data)
+
+    async def error(message, request_id=None, code="invalid_request"):
+        await send({"type": "error", "error": True, "code": code,
+                    "request_id": request_id, "message": message})
+
+    async def run_question(data):
+        request_id = data["request_id"]
+        started = time.monotonic()
+        try:
+            async with asyncio.timeout(REQUEST_TIMEOUT):
+                async for chunk in get_pipeline().astream(
+                    {"pertanyaan": data["pertanyaan"]}, stream_mode="updates",
+                ):
+                    for agent, payload in chunk.items():
+                        await send({"type": "step", "request_id": request_id,
+                                    "agent": agent, "payload": {
+                                        k: v for k, v in payload.items() if k in PUBLIC_FIELDS
+                                    }})
+                await send({"type": "done", "request_id": request_id})
+        except TimeoutError:
+            await error("Waktu pemrosesan habis. Silakan coba lagi.", request_id, "timeout")
+        except (WebSocketDisconnect, OSError):
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            # Do not log user questions, retrieved text, credentials, or provider error bodies.
+            logger.error("request=%s failed exception=%s", request_id, type(exc).__name__)
+            await error("Pertanyaan belum berhasil diproses. Silakan coba lagi.", request_id, "processing_failed")
+        finally:
+            logger.info("request=%s duration_ms=%d", request_id, (time.monotonic() - started) * 1000)
+
     try:
         while True:
-            try:
-                raw = await ws.receive_text()
-            except WebSocketDisconnect:
-                raise
-
-            try:
-                data = json.loads(raw)
-            except json.JSONDecodeError:
-                await ws.send_text(json.dumps({
-                    "error": True,
-                    "message": "Format pesan tidak valid.",
-                }))
+            packet = await ws.receive()
+            if packet["type"] == "websocket.disconnect":
+                break
+            raw = packet.get("text")
+            if raw is None:
+                await error("Gunakan pesan teks JSON.")
                 continue
-
-            pertanyaan = data.get("pertanyaan", "") or data.get("text", "")
-
             try:
-                stream = app.astream({"pertanyaan": pertanyaan}, stream_mode="updates")
-                async for chunk in stream:
-                    for agent_name, payload in chunk.items():
-                        await ws.send_text(json.dumps({
-                            "agent": agent_name,
-                            "payload": to_jsonable(payload),
-                        }))
-            except WebSocketDisconnect:
-                raise
-            except Exception:
-                await ws.send_text(json.dumps({
-                    "error": True,
-                    "message": (
-                        "Terjadi kesalahan saat memproses pertanyaan. "
-                        "Silakan coba lagi."
-                    ),
-                }))
-    except WebSocketDisconnect:
-        return
+                data = parse_message(raw)
+            except ValueError as exc:
+                await error(str(exc))
+                continue
+            request_id = data["request_id"]
+            if data["type"] == "cancel":
+                if running and not running.done() and active_id == request_id:
+                    running.cancel()
+                    await asyncio.gather(running, return_exceptions=True)
+                    await send({"type": "cancelled", "request_id": request_id})
+                continue
+            if running and not running.done():
+                await error("Tunggu pertanyaan sebelumnya selesai.", request_id, "busy")
+                continue
+            client = ws.client.host if ws.client else "unknown"
+            if not ws.app.state.limiter.allow(client):
+                await error("Terlalu banyak pertanyaan. Coba lagi dalam satu menit.", request_id, "rate_limited")
+                continue
+            if ws.app.state.slots.locked():
+                await error("Server sedang sibuk. Silakan coba beberapa saat lagi.", request_id, "overloaded")
+                continue
+            if missing_settings():
+                await error("Layanan belum siap. Konfigurasi server perlu dilengkapi.", request_id, "not_configured")
+                continue
+            active_id = request_id
+            await ws.app.state.slots.acquire()
+            running = asyncio.create_task(run_question(data))
+            # A callback also releases the slot if cancellation precedes task startup.
+            running.add_done_callback(lambda _task: ws.app.state.slots.release())
+    except (WebSocketDisconnect, OSError):
+        pass
+    finally:
+        if running:
+            running.cancel()
+            await asyncio.gather(running, return_exceptions=True)

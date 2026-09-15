@@ -20,3 +20,14 @@ sempro.code-workspace
 .idea
 .DS_Store
 Thumbs.db
+
+# Python environments, tests, and private configuration
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+coverage/
+.coverage

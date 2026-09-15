@@ -1,25 +1,9 @@
 export const PROFILE_KEY = "quranrag-demo-profile";
-export const SESSION_KEY = "quranrag-session";
-export const SESSION_GRAPH_KEY = "quranrag-session-graph";
-export const SESSION_NEO4J_CONFIG_KEY = "quranrag-neo4j-config";
+export const SESSION_KEY = "quranrag-session-v2";
+export const SESSION_GRAPH_KEY = "quranrag-session-graph-v2";
+export const MAX_QUESTION_LENGTH = 2000;
 
-export const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:8000/ws/ask";
-
-function deriveApiBase() {
-  const configured = import.meta.env.VITE_API_BASE;
-  if (configured) return String(configured).replace(/\/$/, "");
-
-  try {
-    const wsUrl = new URL(WS_URL);
-    wsUrl.protocol = wsUrl.protocol === "wss:" ? "https:" : "http:";
-    wsUrl.pathname = "";
-    wsUrl.search = "";
-    wsUrl.hash = "";
-    return wsUrl.toString().replace(/\/$/, "");
-  } catch {
-    return "http://127.0.0.1:8000";
-  }
-}
-
-export const API_BASE = deriveApiBase();
-export const GRAPH_CONFIG_URL = `${API_BASE}/graph-config`;
+// The Vite proxy supports local development; deployments use same-origin /ws/ask.
+const defaultUrl = new URL("/ws/ask", window.location.href);
+defaultUrl.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+export const WS_URL = import.meta.env.VITE_WS_URL || defaultUrl.toString();

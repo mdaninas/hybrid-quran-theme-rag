@@ -160,22 +160,6 @@ function Add-ThemeBranch {
     }
 }
 
-$envValues = Read-DotEnv -Path $EnvFile
-$neo4jUser = $envValues['NEO4J_LOKAL_USER']
-$neo4jPassword = $envValues['NEO4J_LOKAL_PASSWORD']
-
-if ([string]::IsNullOrWhiteSpace($neo4jUser) -or [string]::IsNullOrWhiteSpace($neo4jPassword)) {
-    throw "NEO4J_LOKAL_USER atau NEO4J_LOKAL_PASSWORD belum terisi di $EnvFile"
-}
-
-$credentialText = "{0}:{1}" -f $neo4jUser, $neo4jPassword
-$basicToken = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($credentialText))
-$script:Headers = @{
-    Authorization = "Basic $basicToken"
-    Accept = "application/json"
-}
-$script:TransactionEndpoint = "{0}/db/{1}/tx/commit" -f $HttpUri.TrimEnd('/'), $Database
-
 $readyDirectory = Join-Path $PSScriptRoot "READY"
 $surahPath = Join-Path $readyDirectory "NODE_SURAH.json"
 $ayatPath = Join-Path $readyDirectory "NODE_AYAT.json"
@@ -268,16 +252,27 @@ if ($missingThemeAyatIds.Count -gt 0) {
     Write-Warning ("{0} ID ayat pada data tematik tidak tersedia dan relasinya akan dilewati: {1}" -f $missingThemeAyatIds.Count, ($missingThemeAyatIds -join ', '))
 }
 
+if ($ValidateOnly) {
+    Write-Host "Validasi sumber selesai tanpa koneksi atau perubahan pada Neo4j."
+    exit 0
+}
+
+$envValues = Read-DotEnv -Path $EnvFile
+$neo4jUser = $envValues['NEO4J_LOKAL_USER']
+$neo4jPassword = $envValues['NEO4J_LOKAL_PASSWORD']
+if ([string]::IsNullOrWhiteSpace($neo4jUser) -or [string]::IsNullOrWhiteSpace($neo4jPassword)) {
+    throw "NEO4J_LOKAL_USER atau NEO4J_LOKAL_PASSWORD belum terisi di $EnvFile"
+}
+$credentialText = "{0}:{1}" -f $neo4jUser, $neo4jPassword
+$basicToken = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($credentialText))
+$script:Headers = @{ Authorization = "Basic $basicToken"; Accept = "application/json" }
+$script:TransactionEndpoint = "{0}/db/{1}/tx/commit" -f $HttpUri.TrimEnd('/'), $Database
+
 $connectivity = @(Invoke-Neo4jStatement -Statement "RETURN 1 AS ok")
 if ($connectivity.Count -ne 1 -or [int]$connectivity[0].row[0] -ne 1) {
     throw "Neo4j merespons, tetapi pemeriksaan koneksi tidak valid."
 }
 Write-Host ("Koneksi Neo4j berhasil: {0} (database: {1})" -f $HttpUri, $Database)
-
-if ($ValidateOnly) {
-    Write-Host "Validasi selesai. Tidak ada perubahan pada Neo4j."
-    exit 0
-}
 
 $constraints = @(
     "CREATE CONSTRAINT surah_id_unique IF NOT EXISTS FOR (n:Surah) REQUIRE n.id IS UNIQUE",

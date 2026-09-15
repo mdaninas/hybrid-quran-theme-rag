@@ -2,53 +2,36 @@ import { useState } from "react";
 import Layout from "./components/Layout";
 import LoginScreen from "./components/LoginScreen";
 import { PROFILE_KEY, SESSION_GRAPH_KEY, SESSION_KEY } from "./constants";
+import { readStorage, writeStorage } from "./session";
 
-function readStoredProfile() {
-  for (const storage of [localStorage, sessionStorage]) {
-    try {
-      const raw = storage.getItem(PROFILE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {
-      // Storage can be disabled by the browser. The demo still works in memory.
+function removeKey(storageName, key) {
+  try { window[storageName].removeItem(key); } catch { /* Storage may be disabled. */ }
+}
+
+function readProfile() {
+  // Delete credentials and old, incompatible query-based sessions left by earlier versions.
+  for (const key of ["quranrag-neo4j-config", "quranrag-session", "quranrag-session-graph"]) removeKey("sessionStorage", key);
+  for (const storageName of ["localStorage", "sessionStorage"]) {
+    const value = readStorage(PROFILE_KEY, null, storageName);
+    if (value && typeof value.name === "string" && value.name.trim() && ["guest", "local"].includes(value.mode)) {
+      return { name: value.name.trim().slice(0, 60), mode: value.mode };
     }
   }
   return null;
 }
 
 export default function App() {
-  const [profile, setProfile] = useState(readStoredProfile);
-
-  const handleLogin = (nextProfile) => {
-    const profileToStore = {
-      email: nextProfile.email,
-      mode: nextProfile.mode,
-      name: nextProfile.name,
-    };
-
-    try {
-      const storage = nextProfile.remember ? localStorage : sessionStorage;
-      localStorage.removeItem(PROFILE_KEY);
-      sessionStorage.removeItem(PROFILE_KEY);
-      storage.setItem(PROFILE_KEY, JSON.stringify(profileToStore));
-    } catch {
-      // Keep the profile in React state when browser storage is unavailable.
-    }
-    setProfile(profileToStore);
+  const [profile, setProfile] = useState(readProfile);
+  const login = (next) => {
+    const saved = { name: next.name, mode: next.mode };
+    removeKey("localStorage", PROFILE_KEY); removeKey("sessionStorage", PROFILE_KEY);
+    writeStorage(PROFILE_KEY, saved, next.remember ? "localStorage" : "sessionStorage");
+    setProfile(saved);
   };
-
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem(PROFILE_KEY);
-      sessionStorage.removeItem(PROFILE_KEY);
-      sessionStorage.removeItem(SESSION_KEY);
-      sessionStorage.removeItem(SESSION_GRAPH_KEY);
-    } catch {
-      // No-op when storage is unavailable.
-    }
+  const logout = () => {
+    removeKey("localStorage", PROFILE_KEY);
+    for (const key of [PROFILE_KEY, SESSION_KEY, SESSION_GRAPH_KEY]) removeKey("sessionStorage", key);
     setProfile(null);
   };
-
-  if (!profile) return <LoginScreen onLogin={handleLogin} />;
-
-  return <Layout onLogout={handleLogout} profile={profile} />;
+  return profile ? <Layout profile={profile} onLogout={logout} /> : <LoginScreen onLogin={login} />;
 }
